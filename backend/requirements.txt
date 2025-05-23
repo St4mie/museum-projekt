@@ -1,0 +1,17 @@
+# Core API framework
+fastapi>=0.95.0
+
+# ASGI-Server mit Hot Reload & Extras
+uvicorn[standard]>=0.23.0
+
+# Datenbank-ORM & Treiber
+sqlalchemy>=2.0.0
+pymysql>=1.0.2
+
+# Environment-Loader
+python-dotenv>=1.0.0
+
+# Weitere Integrationen
+wikipedia>=1.4.0         # Wikipedia-API-Wrapper
+wptools>=0.4.11          # Wikipedia-Widget-Tools
+          # Infobox-Parsing via MediaWiki API

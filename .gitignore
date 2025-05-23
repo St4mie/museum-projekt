@@ -1,0 +1,9 @@
+# Virtualenv
+venv/
+
+# Environment files Secrets
+.env
+.env.*
+
+# PyCharm-Configs
+.idea/

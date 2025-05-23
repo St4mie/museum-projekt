@@ -1,0 +1,45 @@
+# docker-compose.yml (Auszug)
+
+services:
+  db:
+    image: mariadb:11
+    container_name: museum-mariadb
+    env_file:
+      - .env
+    environment:
+      # Für MariaDB müssen die Root‐Variablen allerdings VORNE in
+      # environment: stehen – Compose liest sie nicht aus env_file
+      MARIADB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+      MARIADB_DATABASE: "${DB_NAME}"
+      MARIADB_USER: "${DB_USER}"
+      MARIADB_PASSWORD: "${DB_PASSWORD}"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: museum-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Erzeuge die URL für SQLAlchemy aus den .env-Werten
+      DATABASE_URL: "mysql+pymysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+    volumes:
+      - ./backend:/app
+
+volumes:
+  db_data:

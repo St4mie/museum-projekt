@@ -1,0 +1,19 @@
+# Konfiguration der Pre-commit Hooks
+repos:
+  # 1) Black – automatischer Code-Formatter
+  - repo: https://github.com/psf/black  # Quelle des Black-Repositories
+    rev: 25.1.0                       # Version oder Branch des Hooks
+    hooks:
+      - id: black                      # Aktivierung des Black-Hooks
+
+  # 2) isort – sortiert deine Python-Imports
+  - repo: https://github.com/PyCQA/isort
+    rev: 6.0.1                         # Version 5.0.0 von isort
+    hooks:
+      - id: isort                      # Aktivierung des isort-Hooks
+
+  # 3) Flake8 – Linter für Stil- und Syntaxfehler
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.2.0                         # Version 3.9.0 von Flake8
+    hooks:
+      - id: flake8                     # Aktivierung des Flake8-Hooks
