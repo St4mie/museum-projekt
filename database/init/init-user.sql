@@ -1,3 +1,5 @@
+-- noinspection GrazieInspectionForFile
+
 -- database/init/init-users.sql
 -- ---------------------------------------------------------
 -- Legt alle gewünschten DB-Accounts an und vergibt Rechte.
@@ -10,7 +12,7 @@ USE museum_db;
 CREATE USER IF NOT EXISTS 'entwickler'@'%' IDENTIFIED BY 'Starten2025!';
 GRANT ALL PRIVILEGES ON museum_db.* TO 'entwickler'@'%';
 
--- Museum (CRUD für Content Management)
+-- Museum (CRUD für Content-Management)
 CREATE USER IF NOT EXISTS 'museum'@'%' IDENTIFIED BY 'Starten2025!';
 GRANT SELECT, INSERT, UPDATE, DELETE ON museum_db.* TO 'museum'@'%';
 

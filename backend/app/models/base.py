@@ -1,6 +1,9 @@
 # backend/app/models/base.py
+from sqlalchemy.orm import DeclarativeBase
 
-from sqlalchemy.orm import declarative_base
-
-# Base für alle ORM-Models
-Base = declarative_base()
+class Base(DeclarativeBase):
+    """
+    Basisklasse für alle ORM-Modelle.
+    Vererbt von SQLAlchemy 2.0 DeclarativeBase.
+    """
+    pass

@@ -1,14 +1,12 @@
-# backend/app/models/movie_schema.py
-
 from pydantic import BaseModel, Field
 
 class MovieBase(BaseModel):
     """
-    Gemeinsame Felder für Ein- und Ausgabe.
+    Gemeinsame Felder für Input und Output.
     """
     title: str = Field(..., description="Filmtitel")
-    wiki_url: str | None = Field(None, description="URL zum Wikipedia-Artikel")
     release_year: int | None = Field(None, description="Erscheinungsjahr")
+    wiki_url: str | None = Field(None, description="Wikipedia-URL")
     director: str | None = Field(None, description="Regisseur")
     author: str | None = Field(None, description="Drehbuchautor")
     main_cast: str | None = Field(None, description="Hauptdarsteller")
@@ -16,18 +14,27 @@ class MovieBase(BaseModel):
     description: str | None = Field(None, description="Kurzbeschreibung")
     review: bool = Field(False, description="Flag für manuelle Prüfung")
 
+    # Pydantic v2: damit wir ORM-Instanzen direkt serialisieren können
+    model_config = {
+        "from_attributes": True
+    }
+
+
 class MovieCreate(MovieBase):
     """
-    Schema für die Movie-Anlage (Input).
-    Erbt alle Felder aus MovieBase.
+    Schema für neues Movie (POST /movies).
+    Erbt alles von MovieBase – kein eigenes Feld nötig.
     """
+    pass
+
 
 class Movie(MovieBase):
     """
-    Schema für die Movie-Ausgabe (Response).
-    Enthält zusätzlich das DB-PK-Feld.
+    Schema für Movie-Antwort (GET/POST);
+    enthält zusätzlich das Primärschlüssel-Feld.
     """
     id: int
 
-    class Config:
-        from_attributes = True  # Pydantic V2: statt orm_mode
+    model_config = {
+        "from_attributes": True
+    }

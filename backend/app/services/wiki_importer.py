@@ -1,9 +1,6 @@
-# backend/app/services/wiki_importer.py
-
 """
-Service, der Missing-Fields aus Wikipedia/Wikidata zieht.
+Service zum Nachladen fehlender Filminfos von Wikipedia/Wikidata.
 """
-
 try:
     import wikipedia
     import wptools
@@ -12,15 +9,15 @@ except ImportError as e:
 
 class WikiImporter:
     """
-    Liest Summary und Infobox-Daten via wikipedia & wptools aus.
+    Statische Helferklasse, die per wikipedia + wptools
+    Zusammenfassung und Infobox-Felder holt.
     """
-
     @staticmethod
     def fetch(title: str) -> dict:
         """
-        Sucht den Wikipedia-Artikel zum `title`,
-        liest Summary und Infobox-Felder (Regisseur, Autor, Cast, Bild)
-        und liefert ein Dict, das zu unseren ORM-Feldern passt.
+        Lädt die Seite zum `title` (z.B. "Blade Runner")
+        und extrahiert:
+          - description, director, author, main_cast, poster_url
         """
         wikipedia.set_lang("de")
         page = wikipedia.page(title)
@@ -30,7 +27,7 @@ class WikiImporter:
         wp.get_parse()
         infobox = wp.data.get("infobox", {})
 
-        result = {"description": summary}
+        result: dict[str, str | None] = {"description": summary}
 
         if "director" in infobox:
             result["director"] = infobox["director"]
@@ -38,7 +35,8 @@ class WikiImporter:
             result["author"] = infobox["writer"]
         if "starring" in infobox:
             result["main_cast"] = infobox["starring"]
-        # wptools liefert thumb-URL in .image_thumb
+
+        # wptools stellt das Vorschaubild als Attribut image_thumb zur Verfügung
         poster = getattr(wp, "image_thumb", None)
         if poster:
             result["poster_url"] = poster

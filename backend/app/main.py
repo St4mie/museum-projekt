@@ -2,22 +2,21 @@
 
 import time
 from fastapi import FastAPI
+
+app = FastAPI()
+
 from sqlalchemy.exc import OperationalError
 from contextlib import asynccontextmanager
 
+from app.db import engine, Base
 from app.api.endpoints import router
-from app.db import engine
-from app.models.base import Base  # Dort definierst Du `Base = declarative_base()`
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(_app: FastAPI):
     """
-    Startup/Lifespan-Event:
-      1. Wartet, bis die DB erreichbar ist (max. 5 Versuche),
-      2. erstellt dann alle Tabellen via SQLAlchemy.
+    Wartet auf DB-Verfügbarkeit und erstellt das Schema.
     """
-    retries = 5
-    for _ in range(retries):
+    for _ in range(5):
         try:
             with engine.connect():
                 break
@@ -25,8 +24,6 @@ async def lifespan(_: FastAPI):
             time.sleep(2)
     Base.metadata.create_all(bind=engine)
     yield
-    # optional: Cleanup-Code hier
 
-# FastAPI-App mit Lifespan-Handler und Router
 app = FastAPI(lifespan=lifespan, title="Museum API")
 app.include_router(router)
