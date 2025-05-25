@@ -1,0 +1,22 @@
+# -----------------------------
+# Laufzeit-Komponenten
+#
+# -----------------------------
+
+fastapi>=0.95.0            # Core API-Framework
+uvicorn[standard]>=0.23.0  # ASGI-Server mit Hot Reload
+sqlalchemy>=2.0.0          # ORM für Datenbankzugriff
+pymysql>=1.0.2             # MySQL/MariaDB-Treiber
+pydantic>=2.0.0            # Daten-Validierung & Settings
+python-dotenv>=1.0.0       # .env Loader
+
+# Wikipedia-Integration
+wikipedia>=1.4.0           # API-Wrapper
+wptools>=0.4.11            # Infobox-Parsing via MediaWiki API
+
+
+# -----------------------------
+# Entwicklungs-Dependencies
+# -----------------------------
+
+pytest>=7.0.0              # Test-Framework

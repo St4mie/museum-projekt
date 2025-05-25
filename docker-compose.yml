@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+  db:
+    image: mariadb:11
+    container_name: museum-mariadb
+    env_file:
+      - backend/.env
+    environment:
+      # Muss VOR env_file stehen, damit der Entrypoint sie sieht
+      MARIADB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+      MARIADB_DATABASE:     "${DB_NAME}"
+      MARIADB_USER:         "${DB_USER}"
+      MARIADB_PASSWORD:     "${DB_PASSWORD}"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d  # Schema + Prod-User
+
+  # Dieser Service wird nur im Dev-Profil gestartet und führt
+  # alle SQLs in database/dev-init gegen die gerade gestartete db.
+  db-seed:
+    image: mariadb:11
+    profiles:
+      - dev
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - backend/.env
+    entrypoint: |
+      sh -c '
+        echo "🌱 Seeding Dev-DB…";
+        for f in /seed/*.sql; do
+          echo "➡️  $f";
+          mysql \
+            --host="$${DB_HOST:-db}" \
+            --port="$${DB_PORT:-3306}" \
+            --user=root \
+            --password="$${DB_ROOT_PASSWORD}" \
+            "$${DB_NAME}" < "$f";
+        done
+      '
+    volumes:
+      - ./database/dev-init:/seed
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: museum-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    env_file:
+      - backend/.env
+    environment:
+      # Wird vom Code als SQLALCHEMY_DATABASE_URL verwendet
+      DATABASE_URL: "mysql+pymysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+    volumes:
+      - ./backend:/app
+
+volumes:
+  db_data:
