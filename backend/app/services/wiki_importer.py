@@ -27,7 +27,13 @@ class WikiImporter:
         wp.get_parse()
         infobox = wp.data.get("infobox", {})
 
-        result: dict[str, str | None] = {"description": summary}
+        result: dict[str, str | None] = {
+            "description": summary,
+            "director": None,
+            "author": None,
+            "main_cast": None,
+            "poster_url": None
+        }
 
         if "director" in infobox:
             result["director"] = infobox["director"]

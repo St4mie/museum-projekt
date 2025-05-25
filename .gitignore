@@ -70,7 +70,7 @@ docs/_build/
 .vscode/
 
 # Environment files (secrets)
-backend/.env
+.env
 
 # Allow example environment file to be committed
-!backend/.env.example
+!.env.example

@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy import Column, Integer, String, Text, Boolean, TIMESTAMP, UniqueConstraint
 from sqlalchemy.sql import func
-from app.models.base import Base  # Basisklasse mit Meta-Infos
+from app.db import Base  # Basisklasse mit Meta-Infos
 
 class MovieORM(Base):
     """

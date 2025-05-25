@@ -4,17 +4,26 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.main import app
-from app.db import Base, get_db
-from app.models.movie import MovieORM
+from backend.app.db import Base, get_db
+from backend.app.main import app
+
+# Import all models to ensure they are registered with Base
 
 # Typ-Annotation für die IDE, damit FastAPI-spezifische Attribute erkannt werden
 app: FastAPI = app
 
 # ---------------------------------------------------------------------
-# In-Memory-DB für Tests (SQLite) einrichten
+# File-based SQLite DB für Tests einrichten
 # ---------------------------------------------------------------------
-SQLITE_URL = "sqlite:///:memory:"
+import os
+import tempfile
+
+# Create a temporary file for the SQLite database
+db_file = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+db_file.close()
+
+# Use the file path for the SQLite database
+SQLITE_URL = f"sqlite:///{db_file.name}"
 engine = create_engine(
     SQLITE_URL,
     connect_args={"check_same_thread": False},
@@ -25,8 +34,15 @@ TestingSessionLocal = sessionmaker(
     bind=engine,
 )
 
+# Make sure all models are imported and registered with Base
+from backend.app.models.movie import MovieORM
+
 # Schema einmalig in der Test-DB anlegen
 Base.metadata.create_all(bind=engine)
+
+# Clean up the temporary file when the tests are done
+import atexit
+atexit.register(lambda: os.unlink(db_file.name))
 
 # ---------------------------------------------------------------------
 # FastAPI-Dependency-Override: statt MariaDB unsere In-Memory-DB nutzen
@@ -106,7 +122,7 @@ def test_import_from_wiki_success(monkeypatch):
         "poster_url": "http://img"
     }
     monkeypatch.setattr(
-        "app.services.wiki_importer.WikiImporter.fetch",
+        "backend.app.services.wiki_importer.WikiImporter.fetch",
         staticmethod(lambda _: fake_data)
     )
 
@@ -125,7 +141,7 @@ def test_import_from_wiki_failure(monkeypatch):
 
     # Ausnahme in WikiImporter.fetch auslösen
     monkeypatch.setattr(
-        "app.services.wiki_importer.WikiImporter.fetch",
+        "backend.app.services.wiki_importer.WikiImporter.fetch",
         staticmethod(lambda _: (_ for _ in ()).throw(RuntimeError("oh no")))
     )
 
