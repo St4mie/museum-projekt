@@ -1,19 +1,26 @@
-# backend/test/test_api.py
+# backend/tests/test_api.py
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 # Korrekte Imports: wir nutzen das app-Package, nicht backend.app
-from app.main import app
 from app.db import Base, get_db
 from app.models.movie import MovieORM
+from app.api.endpoints import router
 
 # ---------------------------------------------------------------------
-# In-Memory-DB für Tests (SQLite) einrichten
+# File-based SQLite DB für Tests einrichten
 # ---------------------------------------------------------------------
-SQLITE_URL = "sqlite:///:memory:"
+import os
+# Create a test database file in the current directory
+TEST_DB_FILE = "test.db"
+# Remove the file if it exists
+if os.path.exists(TEST_DB_FILE):
+    os.remove(TEST_DB_FILE)
+SQLITE_URL = f"sqlite:///{TEST_DB_FILE}"
 engine = create_engine(
     SQLITE_URL, connect_args={"check_same_thread": False}
 )
@@ -26,6 +33,13 @@ TestingSessionLocal = sessionmaker(
 # Schema einmalig in der Test-DB anlegen
 Base.metadata.create_all(bind=engine)
 
+# Debug: Print the tables that were created
+from sqlalchemy import text
+with engine.connect() as conn:
+    # Get all table names
+    tables = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table';")).fetchall()
+    print("Created tables:", [table[0] for table in tables])
+
 # ---------------------------------------------------------------------
 # FastAPI-Dependency-Override: statt MariaDB unsere In-Memory-DB nutzen
 # ---------------------------------------------------------------------
@@ -36,9 +50,15 @@ def override_get_db():
     finally:
         db.close()
 
-# override in TestClient registrieren
-app.dependency_overrides[get_db] = override_get_db
-client = TestClient(app)
+# Create a new FastAPI app for testing
+test_app = FastAPI()
+test_app.include_router(router)
+
+# Override the get_db dependency
+test_app.dependency_overrides[get_db] = override_get_db
+
+# Create a TestClient
+client = TestClient(test_app)
 
 # ---------------------------------------------------------------------
 # Fixture: Vor jedem Test DB leeren

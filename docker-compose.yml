@@ -1,4 +1,7 @@
 services:
+  # ---------------------------------------------------
+  # MariaDB Hauptdienst
+  # ---------------------------------------------------
   db:
     image: mariadb:11
     container_name: museum-mariadb
@@ -19,6 +22,10 @@ services:
       - db_data:/var/lib/mysql
       - ./database/init:/docker-entrypoint-initdb.d
 
+  # ---------------------------------------------------
+  # Dev-Seed (Testdaten)
+  # nur mit `--profile dev`
+  # ---------------------------------------------------
   db-seed:
     image: mariadb:11
     profiles:
@@ -44,11 +51,17 @@ services:
     volumes:
       - ./database/dev-init:/seed
 
+  # ---------------------------------------------------
+  # FastAPI-Backend mit Live-Mount & Migrations-Config
+  # nur mit `--profile dev`
+  # ---------------------------------------------------
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: museum-backend
+    profiles:
+      - dev
     depends_on:
       db:
         condition: service_healthy
@@ -57,14 +70,26 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: "mysql+pymysql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+      # Runtime-Connection für den Service-User (nur Lese/Schreib)
+      DATABASE_URL:         "${DATABASE_URL}"
+      # Migrations-Connection für den Entwickler-User (volle Rechte)
+      DATABASE_URL_MIGRATE: "${DATABASE_URL_MIGRATE}"
     volumes:
       - ./backend:/app
     command: >
-      uvicorn app.main:app
-      --host 0.0.0.0
-      --port 8000
-      --reload
+      sh -c "
+        # 1) Alembic-Migration automatisch vor dem Start, wenn URL gesetzt
+        if [ -n \"${DATABASE_URL_MIGRATE}\" ]; then
+          echo '🔄 Running migrations…';
+          alembic upgrade head;
+        fi;
+        # 2) Dann den Uvicorn-Server starten
+        echo '🚀 Starting FastAPI…';
+        uvicorn app.main:app
+          --host 0.0.0.0
+          --port 8000
+          --reload
+      "
 
 volumes:
   db_data:

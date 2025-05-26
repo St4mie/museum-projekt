@@ -60,7 +60,7 @@ def create_movie(
     )
     if exists:
         raise HTTPException(status_code=409, detail="Movie already exists")
-    movie_orm = MovieORM(**movie.dict())
+    movie_orm = MovieORM(**movie.model_dump())
     db.add(movie_orm)
     db.commit()
     db.refresh(movie_orm)

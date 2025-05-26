@@ -1,6 +1,3 @@
--- noinspection GrazieInspectionForFile
-
--- database/init/init-users.sql
 -- ---------------------------------------------------------
 -- Legt alle gewünschten DB-Accounts an und vergibt Rechte.
 -- Wird nur beim allerersten Start ausgeführt.
@@ -16,9 +13,13 @@ GRANT ALL PRIVILEGES ON museum_db.* TO 'entwickler'@'%';
 CREATE USER IF NOT EXISTS 'museum'@'%' IDENTIFIED BY 'Starten2025!';
 GRANT SELECT, INSERT, UPDATE, DELETE ON museum_db.* TO 'museum'@'%';
 
--- Service (Import- und API-User, Lesen + Einfügen)
+-- Service (Import- und API-User)
+-- +++ HIER jetzt auch DDL-Rechte (CREATE, ALTER) für create_all() +++
 CREATE USER IF NOT EXISTS 'service'@'%' IDENTIFIED BY 'Starten2025!';
-GRANT SELECT, INSERT ON museum_db.* TO 'service'@'%';
+GRANT
+    SELECT, INSERT,             -- Lese- und Schreib-Daten
+    CREATE, ALTER                -- Tabellen anlegen / ändern
+ON museum_db.* TO 'service'@'%';
 
 -- System (Read-Only, Monitoring)
 CREATE USER IF NOT EXISTS 'system'@'%' IDENTIFIED BY 'Starten2025!';
