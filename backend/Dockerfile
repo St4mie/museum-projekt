@@ -9,6 +9,7 @@ FROM python:3.11-slim
 # Arbeitsverzeichnis im Container
 # -----------------------------------------------------------------------------
 WORKDIR /app
+ENV PYTHONPATH=/app
 
 # -----------------------------------------------------------------------------
 # 1. Kopiere die Liste aller Python-Abhängigkeiten

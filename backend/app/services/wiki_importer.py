@@ -1,50 +1,49 @@
-"""
-Service zum Nachladen fehlender Filminfos von Wikipedia/Wikidata.
-"""
-try:
-    import wikipedia
-    import wptools
-except ImportError as e:
-    raise RuntimeError(f"Fehlende Abhängigkeit: {e.name}")
+# backend/app/services/wiki_importer.py
+
+import wikipedia
+import wptools
+from typing import Dict
+
 
 class WikiImporter:
     """
-    Statische Helferklasse, die per wikipedia + wptools
-    Zusammenfassung und Infobox-Felder holt.
+    Importiert Metadaten für Filme aus Wikipedia/Wikidata.
+    Nutzt deutsche Wikipedia (de.wikipedia.org) für Summary und Infobox.
     """
+
     @staticmethod
-    def fetch(title: str) -> dict:
+    def fetch(title: str) -> Dict[str, str]:
         """
-        Lädt die Seite zum `title` (z.B. "Blade Runner")
-        und extrahiert:
-          - description, director, author, main_cast, poster_url
+        Holt die Felddaten für den gegebenen Filmtitel.
+        - title: Film-Titel (z. B. "Inception")
+        - nutzt deutsche Wikipedia
+        Gibt ein Dict mit Keys:
+          - director
+          - author
+          - main_cast
+          - poster_url
+          - description
         """
+        # DEUTSCHE WIKIPEDIA erzwingen
         wikipedia.set_lang("de")
-        page = wikipedia.page(title)
-        summary = page.summary or None
 
-        wp = wptools.page(title, silent=True)
-        wp.get_parse()
-        infobox = wp.data.get("infobox", {})
+        # 1. Kurzzusammenfassung aus deutscher WP
+        summary = wikipedia.page(title).summary
 
-        result: dict[str, str | None] = {
+        # 2. Infobox-Daten aus deutscher WP parsen
+        page = wptools.page(title, lang="de").get_parse()
+        infobox = page.data.get("infobox", {})
+
+        # Felder extrahieren (je nach Infobox-Schlüssel)
+        director = infobox.get("Regie") or infobox.get("regie") or infobox.get("director")
+        author = infobox.get("Drehbuch") or infobox.get("drehbuch") or infobox.get("writer")
+        main_cast = infobox.get("Besetzung") or infobox.get("besetzung") or infobox.get("starring")
+        poster_url = infobox.get("Bild") or infobox.get("bild") or infobox.get("image") or infobox.get("poster")
+
+        return {
             "description": summary,
-            "director": None,
-            "author": None,
-            "main_cast": None,
-            "poster_url": None
+            "director": director,
+            "author": author,
+            "main_cast": main_cast,
+            "poster_url": poster_url,
         }
-
-        if "director" in infobox:
-            result["director"] = infobox["director"]
-        if "writer" in infobox:
-            result["author"] = infobox["writer"]
-        if "starring" in infobox:
-            result["main_cast"] = infobox["starring"]
-
-        # wptools stellt das Vorschaubild als Attribut image_thumb zur Verfügung
-        poster = getattr(wp, "image_thumb", None)
-        if poster:
-            result["poster_url"] = poster
-
-        return result

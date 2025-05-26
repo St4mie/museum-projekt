@@ -3,7 +3,7 @@ services:
     image: mariadb:11
     container_name: museum-mariadb
     env_file:
-      - .env       # Pfad relativ zur compose-Datei
+      - .env
     environment:
       MARIADB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
       MARIADB_DATABASE:     "${DB_NAME}"
@@ -33,7 +33,7 @@ services:
         echo "🌱 Seeding Dev-DB…";
         for f in /seed/*.sql; do
           echo "➡️  $${f}";
-          mysql \
+          mariadb \
             --host="$${DB_HOST:-db}" \
             --port="$${DB_PORT:-3306}" \
             --user=root \

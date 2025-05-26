@@ -38,3 +38,4 @@ app = FastAPI(lifespan=lifespan, title="Museum API")
 
 # Inkludiere alle Routen des Routers (prefix "/movies")
 app.include_router(router)
+
