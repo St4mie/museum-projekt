@@ -24,7 +24,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # -----------------------------------------------------------------------------
 # 3. Kopiere den gesamten Anwendungs-Code
 # -----------------------------------------------------------------------------
-COPY app ./app
+COPY . .
 
 # -----------------------------------------------------------------------------
 # 4. Öffne den Port, auf dem Uvicorn später lauscht
