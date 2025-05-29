@@ -1,23 +1,28 @@
+# backend/requirements.txt
+
 # -----------------------------
 # Laufzeit-Komponenten
-#
 # -----------------------------
+fastapi>=0.95.0            # Core API-Framework für asynchrone HTTP-Services
+uvicorn[standard]>=0.23.0  # ASGI-Server mit Hot-Reload und Protokoll-Unterstützung
+sqlalchemy>=2.0.0          # ORM für flexiblen und performanten DB-Zugriff
+pymysql>=1.0.2             # MySQL/MariaDB-Treiber für SQLAlchemy
+pydantic>=2.0.0            # Daten-Validation, Settings-Management und Serialisierung
+python-dotenv>=1.0.0       # Einfache .env-Datei-Ladefunktion für Umgebungsvariablen
+pillow>=9.0.0              # Bildverarbeitung (erforderlich für Thumbnail-Generierung)
 
-fastapi>=0.95.0            # Core API-Framework
-uvicorn[standard]>=0.23.0  # ASGI-Server mit Hot Reload
-sqlalchemy>=2.0.0          # ORM für Datenbankzugriff
-pymysql>=1.0.2             # MySQL/MariaDB-Treiber
-pydantic>=2.0.0            # Daten-Validierung & Settings
-python-dotenv>=1.0.0       # .env Loader
-
+# -----------------------------
 # Wikipedia-Integration
-wikipedia>=1.4.0           # API-Wrapper
-wptools>=0.4.11            # Infobox-Parsing via MediaWiki API
-
+# -----------------------------
+wikipedia>=1.4.0           # Wrapper für die MediaWiki-API (Abruf von Artikeldaten)
+wptools>=0.4.11            # Infobox-Parsing und weitergehende Wiki-Funktionen
 
 # -----------------------------
 # Entwicklungs-Dependencies
 # -----------------------------
-
-pytest>=7.0.0              # Test-Framework
-httpx>=0.28.1,<1.0             # HTTP-Client für Tests
+pytest>=7.0.0              # Test-Framework für Unit- und Integrationstests
+httpx>=0.28.1,<1.0          # Asynchroner HTTP-Client; wird von TestClient verwendet
+alembic>=1.16.1            # Migrationstool für DB-Schema-Versionierung und -Upgrades
+flake8>=5.0.0              # Linter zur statischen Code-Analyse und PEP8-Prüfung
+black>=23.1.0              # Code-Formatter für konsistente Formatierung
+isort>=5.10.0              # Import-Sortierung für sauberen und einheitlichen Code

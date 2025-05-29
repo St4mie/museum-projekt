@@ -4,8 +4,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.db import Base                             # Metadata für schema-create
-from app.models.movie import MovieORM                # Modell-Klasse für Tests
+from app.db import Base  # Metadata für schema-create
 from app.services.wiki_importer import WikiImporter  # Zu testender Importer
 
 # In-Memory-SQLite für schnelle Unit-Tests

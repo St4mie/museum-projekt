@@ -76,19 +76,17 @@ services:
       DATABASE_URL_MIGRATE: "${DATABASE_URL_MIGRATE}"
     volumes:
       - ./backend:/app
+      - ./backend/static:/app/static   # Statische Medien im Container
     command: >
       sh -c "
         # 1) Alembic-Migration automatisch vor dem Start, wenn URL gesetzt
         if [ -n \"${DATABASE_URL_MIGRATE}\" ]; then
           echo '🔄 Running migrations…';
-          alembic upgrade head;
+          alembic upgrade head || echo '⚠️  Alembic nicht gefunden – bitte in requirements.txt aufnehmen';
         fi;
-        # 2) Dann den Uvicorn-Server starten
+        # 2) Dann den Uvicorn-Server starten (Flags in einer Zeile!)
         echo '🚀 Starting FastAPI…';
-        uvicorn app.main:app
-          --host 0.0.0.0
-          --port 8000
-          --reload
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
       "
 
 volumes:
