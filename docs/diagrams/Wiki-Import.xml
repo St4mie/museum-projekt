@@ -1,0 +1,133 @@
+<mxfile host="app.diagrams.net" modified="2023-11-22T12:00:00.000Z" agent="5.0 (Windows)" etag="abc123" version="21.0.6" type="device">
+  <diagram name="Wiki-Import" id="WIKI123">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Titel -->
+        <mxCell id="title" value="🌐 Wiki-Import im Museum-Projekt" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="200" y="20" width="760" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Beschreibung -->
+        <mxCell id="description" value="Der Wiki-Import ermöglicht das automatische Abrufen von Filmdaten aus Wikipedia und Wikidata, um die Datenbank mit Metadaten wie Regisseur, Autor, Hauptdarsteller und Beschreibungen zu füllen." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="150" y="60" width="860" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Linke Seite: WikiImporter-Klasse -->
+        <mxCell id="wiki_importer_title" value="WikiImporter-Klasse (wiki_importer.py)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="50" y="110" width="300" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="wiki_importer_code" value="class WikiImporter:&#xa;    @staticmethod&#xa;    def fetch(title: str) -> Dict[str, str]:&#xa;        # 1) Sprache für Wikipedia setzen&#xa;        wikipedia.set_lang(settings.wikipedia_language)&#xa;        &#xa;        # 2) Kurzzusammenfassung abrufen&#xa;        summary = wikipedia.page(title).summary&#xa;&#xa;        # 3) Infobox-Daten parsen&#xa;        page = wptools.page(title).get_parse()&#xa;        infobox = page.data.get(&quot;infobox&quot;, {})&#xa;&#xa;        # 4) Relevante Felder extrahieren&#xa;        director = infobox.get(&quot;Regie&quot;) or infobox.get(&quot;director&quot;)&#xa;        author = infobox.get(&quot;Drehbuch&quot;) or infobox.get(&quot;writer&quot;)&#xa;        main_cast = infobox.get(&quot;Besetzung&quot;) or infobox.get(&quot;starring&quot;)&#xa;        poster_url = infobox.get(&quot;Bild&quot;) or infobox.get(&quot;image&quot;)&#xa;&#xa;        # 5) Ergebnis zurückgeben&#xa;        return {&#xa;            &quot;beschreibung&quot;: summary,&#xa;            &quot;regisseur&quot;: director,&#xa;            &quot;autor&quot;: author,&#xa;            &quot;hauptdarsteller&quot;: main_cast,&#xa;            &quot;poster_url&quot;: poster_url,&#xa;        }" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="50" y="140" width="400" height="320" as="geometry"/>
+        </mxCell>
+
+        <!-- Rechte Seite: Einzelner Film-Import -->
+        <mxCell id="single_import_title" value="Einzelner Film-Import (routes.py)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="500" y="110" width="300" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="single_import_code" value="@movie_router.post(&quot;/import/{movie_id}&quot;)&#xa;def import_movie_metadata(&#xa;    movie_id: int,&#xa;    db_session: Session = Depends(get_db),&#xa;):&#xa;    # Film aus DB laden&#xa;    film = db_session.query(MovieORM).filter(&#xa;        MovieORM.id == movie_id&#xa;    ).first()&#xa;    if not film:&#xa;        raise HTTPException(status_code=404)&#xa;&#xa;    try:&#xa;        # WikiImporter aufrufen&#xa;        data = WikiImporter.fetch(film.titel)&#xa;        &#xa;        # Nur leere Felder überschreiben&#xa;        for key, value in data.items():&#xa;            if getattr(film, key, None) in (None, &quot;&quot;, []):&#xa;                setattr(film, key, value)&#xa;                &#xa;        db_session.commit()&#xa;        return film&#xa;        &#xa;    except Exception as e:&#xa;        # Bei Fehlern Film zur manuellen Review markieren&#xa;        film.pruefung = True&#xa;        db_session.commit()&#xa;        raise HTTPException(status_code=502)" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="500" y="140" width="400" height="320" as="geometry"/>
+        </mxCell>
+
+        <!-- Untere Seite: Bulk-Import -->
+        <mxCell id="bulk_import_title" value="Bulk-Import mehrerer Filme (routes.py)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="50" y="480" width="400" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="bulk_import_code" value="@wiki_router.post(&quot;/import&quot;)&#xa;def import_from_wiki(&#xa;    request: WikiImportRequest,&#xa;    background_tasks: BackgroundTasks,&#xa;    db_session: Session = Depends(get_db),&#xa;):&#xa;    # Status-Reset&#xa;    import_status = {&#xa;        &quot;status&quot;: &quot;running&quot;, &#xa;        &quot;processed&quot;: 0, &#xa;        &quot;errors&quot;: 0&#xa;    }&#xa;&#xa;    def import_titles(titles: List[str], session: Session):&#xa;        for title in titles:&#xa;            try:&#xa;                # Nur neu anlegen, wenn nicht vorhanden&#xa;                existing = session.query(MovieORM).filter_by(&#xa;                    titel=title&#xa;                ).first()&#xa;                if not existing:&#xa;                    movie = MovieORM(titel=title)&#xa;                    session.add(movie)&#xa;                    session.commit()&#xa;&#xa;                    # WikiImporter aufrufen&#xa;                    data = WikiImporter.fetch(title)&#xa;                    for key, value in data.items():&#xa;                        setattr(movie, key, value)&#xa;                    session.commit()&#xa;&#xa;                import_status[&quot;processed&quot;] += 1&#xa;&#xa;            except Exception as e:&#xa;                import_status[&quot;errors&quot;] += 1&#xa;&#xa;        import_status[&quot;status&quot;] = &quot;completed&quot;&#xa;&#xa;    # Task zur Abarbeitung einreihen&#xa;    background_tasks.add_task(&#xa;        import_titles, request.titles, session=db_session&#xa;    )" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;fillColor=#ffe6cc;strokeColor=#d79b00;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="50" y="510" width="400" height="320" as="geometry"/>
+        </mxCell>
+
+        <!-- Rechte Seite unten: Ablaufdiagramm -->
+        <mxCell id="flow_title" value="Ablauf des Wiki-Imports" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="500" y="480" width="400" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Ablaufdiagramm -->
+        <mxCell id="step1" value="1. Filmtitel identifizieren" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="520" y="520" width="160" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="step2" value="2. Wikipedia-API aufrufen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="520" y="580" width="160" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="step3" value="3. Infobox-Daten parsen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="520" y="640" width="160" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="step4" value="4. Daten in DB speichern" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="520" y="700" width="160" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="step5" value="5. Fehlerbehandlung" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="520" y="760" width="160" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Ablaufdiagramm Pfeile -->
+        <mxCell id="arrow1" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="step1" target="step2">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="570" as="sourcePoint"/>
+            <mxPoint x="650" y="520" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="arrow2" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="step2" target="step3">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="630" as="sourcePoint"/>
+            <mxPoint x="650" y="580" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="arrow3" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="step3" target="step4">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="690" as="sourcePoint"/>
+            <mxPoint x="650" y="640" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="arrow4" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="step4" target="step5">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="750" as="sourcePoint"/>
+            <mxPoint x="650" y="700" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Ablaufdiagramm Erklärungen -->
+        <mxCell id="step1_desc" value="Filmtitel aus Anfrage oder DB" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="700" y="520" width="200" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="step2_desc" value="wikipedia.page() für Zusammenfassung" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="700" y="580" width="200" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="step3_desc" value="wptools.page().get_parse() für Infobox" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="700" y="640" width="200" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="step4_desc" value="Nur leere Felder in der DB aktualisieren" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="700" y="700" width="200" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="step5_desc" value="Bei Fehlern: Film zur Prüfung markieren" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="700" y="760" width="200" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Erläuterungen -->
+        <mxCell id="explanations_title" value="Zusammenfassung des Wiki-Imports" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="50" y="850" width="750" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="explanations" value="Der Wiki-Import im Museum-Projekt ermöglicht das automatische Abrufen von Filmdaten aus Wikipedia und Wikidata:&#xa;&#xa;1. Die WikiImporter-Klasse ist der zentrale Dienst, der die Kommunikation mit Wikipedia und Wikidata übernimmt&#xa;2. Die fetch()-Methode nutzt zwei Python-Bibliotheken:&#xa;   - wikipedia: Für die Zusammenfassung des Films&#xa;   - wptools: Für die strukturierten Daten aus der Infobox (Regisseur, Autor, Hauptdarsteller, Poster-URL)&#xa;3. Es gibt zwei Arten des Imports:&#xa;   - Einzelimport: Aktualisiert einen vorhandenen Film mit fehlenden Metadaten&#xa;   - Bulk-Import: Importiert mehrere Filme im Hintergrund mit BackgroundTasks&#xa;4. Fehlerbehandlung: Filme werden bei Importfehlern zur manuellen Prüfung markiert (pruefung=True)&#xa;5. Konfiguration: Die Sprache und API-URL für Wikipedia werden über die Anwendungseinstellungen gesteuert&#xa;&#xa;Der Wiki-Import ist ein wichtiger Bestandteil des Museum-Projekts, da er die manuelle Dateneingabe reduziert und die Datenbank mit umfangreichen Metadaten anreichert." style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="50" y="880" width="900" height="160" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

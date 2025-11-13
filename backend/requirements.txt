@@ -1,5 +1,3 @@
-# backend/requirements.txt
-
 # -----------------------------
 # Laufzeit-Komponenten
 # -----------------------------
@@ -7,9 +5,10 @@ fastapi>=0.95.0            # Core API-Framework für asynchrone HTTP-Services
 uvicorn[standard]>=0.23.0  # ASGI-Server mit Hot-Reload und Protokoll-Unterstützung
 sqlalchemy>=2.0.0          # ORM für flexiblen und performanten DB-Zugriff
 pymysql>=1.0.2             # MySQL/MariaDB-Treiber für SQLAlchemy
-pydantic>=2.0.0            # Daten-Validation, Settings-Management und Serialisierung
+pydantic>=2.0.0,<3.0.0     # Daten-Validation, Serialisierung und Settings
 python-dotenv>=1.0.0       # Einfache .env-Datei-Ladefunktion für Umgebungsvariablen
 pillow>=9.0.0              # Bildverarbeitung (erforderlich für Thumbnail-Generierung)
+pydantic-settings>=2.9.1,<3.0.0  # Ausgelagerte BaseSettings-Klasse für Pydantic v2
 
 # -----------------------------
 # Wikipedia-Integration
@@ -21,6 +20,7 @@ wptools>=0.4.11            # Infobox-Parsing und weitergehende Wiki-Funktionen
 # Entwicklungs-Dependencies
 # -----------------------------
 pytest>=7.0.0              # Test-Framework für Unit- und Integrationstests
+pytest-cov>=4.1.0          # Coverage plugin for pytest
 httpx>=0.28.1,<1.0          # Asynchroner HTTP-Client; wird von TestClient verwendet
 alembic>=1.16.1            # Migrationstool für DB-Schema-Versionierung und -Upgrades
 flake8>=5.0.0              # Linter zur statischen Code-Analyse und PEP8-Prüfung

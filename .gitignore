@@ -74,3 +74,4 @@ docs/_build/
 
 # Allow example environment file to be committed
 !.env.example
+/Documentation.md

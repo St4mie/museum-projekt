@@ -16,20 +16,20 @@ class MovieORM(Base):
     """
     ORM-Klasse für Filme.
     - __tablename__: Name der DB-Tabelle
-    - __table_args__: Composite-Unique-Constraint auf title+release_year
+    - __table_args__: Composite-Unique-Constraint auf titel+erscheinungsjahr
     """
     __tablename__ = "movie"
-    __table_args__ = (UniqueConstraint("title", "release_year"),)
+    __table_args__ = (UniqueConstraint("titel", "erscheinungsjahr"),)
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False, index=True)
+    titel = Column(String, nullable=False, index=True)
     wiki_url = Column(String, nullable=True)
-    release_year = Column(Integer, nullable=False)
-    director = Column(String, nullable=True)
-    author = Column(String, nullable=True)
-    main_cast = Column(String, nullable=True)
+    erscheinungsjahr = Column(Integer, nullable=False)
+    regisseur = Column(String, nullable=True)
+    autor = Column(String, nullable=True)
+    hauptdarsteller = Column(String, nullable=True)
     poster_url = Column(String, nullable=True)
-    description = Column(String, nullable=True)
-    review = Column(Boolean, default=False, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    beschreibung = Column(String, nullable=True)
+    pruefung = Column(Boolean, default=False, nullable=False)
+    erstellt_am = Column(DateTime(timezone=True), server_default=func.now())
+    aktualisiert_am = Column(DateTime(timezone=True), onupdate=func.now())

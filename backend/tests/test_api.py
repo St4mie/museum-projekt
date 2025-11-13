@@ -1,158 +1,77 @@
-# backend/tests/test_api.py
+"""
+This module provides test setup utilities for API tests.
+The actual tests have been moved to test_integration.py.
+This file is kept for backward compatibility and to provide
+common test fixtures and utilities.
+"""
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-# Korrekte Imports: wir nutzen das app-Package, nicht backend.app
-from app.db import Base, get_db
+from app.db import Base, SessionLocal, engine, get_db
 from app.models.movie import MovieORM
 from app.api.endpoints import router
 
-# ---------------------------------------------------------------------
-# File-based SQLite DB für Tests einrichten
-# ---------------------------------------------------------------------
-import os
-# Create a test database file in the current directory
-TEST_DB_FILE = "test.db"
-# Remove the file if it exists
-if os.path.exists(TEST_DB_FILE):
-    os.remove(TEST_DB_FILE)
-SQLITE_URL = f"sqlite:///{TEST_DB_FILE}"
-engine = create_engine(
-    SQLITE_URL, connect_args={"check_same_thread": False}
-)
-TestingSessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine,
-)
+# -----------------------------------------------------------------------------
+# Database setup for tests (MariaDB instead of SQLite)
+# -----------------------------------------------------------------------------
+@pytest.fixture(scope="session", autouse=True)
+def setup_database():
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    yield
+    Base.metadata.drop_all(bind=engine)
 
-# Schema einmalig in der Test-DB anlegen
-Base.metadata.create_all(bind=engine)
-
-# Debug: Print the tables that were created
-from sqlalchemy import text
-with engine.connect() as conn:
-    # Get all table names
-    tables = conn.execute(text("SELECT name FROM sqlite_master WHERE type='table';")).fetchall()
-    print("Created tables:", [table[0] for table in tables])
-
-# ---------------------------------------------------------------------
-# FastAPI-Dependency-Override: statt MariaDB unsere In-Memory-DB nutzen
-# ---------------------------------------------------------------------
 def override_get_db():
-    db = TestingSessionLocal()
+    db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
 
-# Create a new FastAPI app for testing
+# -----------------------------------------------------------------------------
+# Test app & client with auth header update
+# -----------------------------------------------------------------------------
 test_app = FastAPI()
 test_app.include_router(router)
-
-# Override the get_db dependency
+# Initialize dependency_overrides as a dictionary if it doesn't exist
+if not hasattr(test_app, "dependency_overrides"):
+    test_app.dependency_overrides = {}
 test_app.dependency_overrides[get_db] = override_get_db
 
-# Create a TestClient
-client = TestClient(test_app)
+# Import default credentials from conftest
+from .conftest import Settings        # Settings.test_user = "dev", test_pass = "devpass"
+import base64
 
-# ---------------------------------------------------------------------
-# Fixture: Vor jedem Test DB leeren
-# ---------------------------------------------------------------------
+settings = Settings()                # Instantiated with default values
+creds = f"{settings.test_user}:{settings.test_pass}"
+token = base64.b64encode(creds.encode()).decode()
+
+client = TestClient(test_app)
+client.headers.update({              # <-- Here we set the auth header globally
+    "Authorization": f"Basic {token}"
+})
+
+# -----------------------------------------------------------------------------
+# Fixture: Clear DB before each test
+# -----------------------------------------------------------------------------
 @pytest.fixture(autouse=True)
 def clear_db():
-    session = TestingSessionLocal()
+    session = SessionLocal()
     session.query(MovieORM).delete()
     session.commit()
     session.close()
     yield
 
-# ---------------------------------------------------------------------
-# Tests
-# ---------------------------------------------------------------------
-def test_read_empty_movies():
-    """GET /movies/ liefert anfangs eine leere Liste"""
-    response = client.get("/movies/")
-    assert response.status_code == 200
-    assert response.json() == []
-
-def test_create_and_read_movie():
-    """POST /movies/ legt einen Film an, GET /movies/ liest ihn aus"""
-    payload = {"title": "Test Movie", "release_year": 2025}
-
-    # anlegen
-    r1 = client.post("/movies/", json=payload)
-    assert r1.status_code == 201
-    movie = r1.json()
-    assert movie["title"] == "Test Movie"
-    assert movie["release_year"] == 2025
-    assert "id" in movie
-
-    # auslesen
-    r2 = client.get("/movies/")
-    assert r2.status_code == 200
-    data = r2.json()
-    assert len(data) == 1
-    assert data[0]["title"] == "Test Movie"
-
-def test_prevent_duplicate_movie():
-    """POST /movies/ mit gleichem Titel+Jahr schlägt mit 409 fehl"""
-    payload = {"title": "Dup", "release_year": 2020}
-    assert client.post("/movies/", json=payload).status_code == 201
-
-    r2 = client.post("/movies/", json=payload)
-    assert r2.status_code == 409
-    assert "already exists" in r2.json()["detail"].lower()
-
-def test_import_from_wiki_success(monkeypatch):
-    """POST /movies/import/{id} füllt Felder erfolgreich aus WikiImporter"""
-    # Film ohne Details anlegen
-    r = client.post("/movies/", json={"title": "Some Title", "release_year": 2000})
-    movie_id = r.json()["id"]
-
-    # WikiImporter.fetch stubben
-    fake_data = {
-        "description": "Desc",
-        "director": "Dir",
-        "author": "Auth",
-        "main_cast": "A,B,C",
-        "poster_url": "http://img"
-    }
-    monkeypatch.setattr(
-        "app.services.wiki_importer.WikiImporter.fetch",
-        staticmethod(lambda _: fake_data)
-    )
-
-    # Import
-    r2 = client.post(f"/movies/import/{movie_id}")
-    assert r2.status_code == 200
-    out = r2.json()
-    for k, v in fake_data.items():
-        assert out[k] == v
-
-def test_import_from_wiki_failure(monkeypatch):
-    """POST /movies/import/{id} bei Import-Error setzt review=True und liefert 502"""
-    r = client.post("/movies/", json={"title": "Err Title", "release_year": 1999})
-    mid = r.json()["id"]
-
-    # WikiImporter.fetch wirft Exception
-    monkeypatch.setattr(
-        "app.services.wiki_importer.WikiImporter.fetch",
-        staticmethod(lambda _: (_ for _ in ()).throw(RuntimeError("oh no")))
-    )
-
-    # Import
-    r2 = client.post(f"/movies/import/{mid}")
-    assert r2.status_code == 502
-    body = r2.json()
-    assert "oh no" in body["detail"]
-
-    # DB-Prüfung: review=True
-    session = TestingSessionLocal()
-    obj = session.get(MovieORM, mid)
-    assert obj.review is True
-    session.close()
+# -----------------------------------------------------------------------------
+# Integration tests against /movies/
+# -----------------------------------------------------------------------------
+# These tests have been moved to test_integration.py
+# and are executed there with the TestClient
+# 
+# - test_read_empty_movies
+# - test_create_and_read_movie
+# - test_prevent_duplicate_movie
+# - test_import_from_wiki_success
+# - test_import_from_wiki_failure

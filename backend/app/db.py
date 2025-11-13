@@ -1,29 +1,61 @@
 # backend/app/db.py
 
+import os
+import socket
+# -------------------------------------------------------------------------
+# 1) Debug ENV & DB_URL
+# -------------------------------------------------------------------------
+print("ENV APP_ENV:", os.getenv("APP_ENV"))
+from app.config import settings
+print(f"settings.app_env: {settings.app_env}")
+print(f"settings.database_url: {settings.database_url}")
+print(f"settings.test_database_url: {settings.test_database_url}")
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 # -------------------------------------------------------------------------
-# 1) Zentrale Konfiguration importieren
+# 2) Engine-URL je nach Umgebung auswählen
+#    - Bei 'test' nutzen wir die Test-DB
+#    - Sonst die Standard-DB
+#    - Bei lokaler Ausführung (nicht in Docker) nutzen wir SQLite
 # -------------------------------------------------------------------------
-# DATABASE_URL: Haupt-Connection-String für den Service-User (lesen/schreiben)
-# DATABASE_URL_MIGRATE: Full-privilege-URL für Migrationen (Alembic)
-from app.config import DATABASE_URL, DATABASE_URL_MIGRATE
+env = settings.app_env.lower()
 
-# -------------------------------------------------------------------------
-# 2) SQLAlchemy Engine & SessionFactory
-# -------------------------------------------------------------------------
-# Engine für reguläre DB-Zugriffe (ohne Migrations-Rechte)
-# pool_pre_ping sorgt für automatische Verbindungsprüfung
-# echo=False deaktiviert SQL-Logging; in DEBUG-Modus ggf. True setzen
+# Prüfen, ob wir lokal (nicht in Docker) ausgeführt werden
+def is_running_locally():
+    try:
+        # Versuche, den 'db'-Hostnamen aufzulösen - wenn es fehlschlägt, sind wir nicht in Docker
+        socket.gethostbyname('db')
+        return False
+    except socket.gaierror:
+        return True
+
+# SQLite für lokale Tests verwenden
+if is_running_locally():
+    print("→ Lokale Ausführung, verwende SQLite")
+    if env == "test":
+        db_url = "sqlite:///./test_db.sqlite"
+    else:
+        db_url = "sqlite:///./dev_db.sqlite"
+else:
+    if env == "test":
+        db_url = settings.test_database_url
+    else:
+        db_url = settings.database_url
+
+print(f"→ Using DB URL for env='{env}': {db_url}")
+
 engine = create_engine(
-    DATABASE_URL,
+    db_url,
     pool_pre_ping=True,
-    echo=False,
-    future=True,  # nutzt SQLAlchemy-2.0-Style
+    echo=False,   # Setze auf True, wenn du SQL-Logs im Dev-Modus sehen möchtest
+    future=True,  # Nutzt SQLAlchemy-2.0-API
 )
 
-# SessionLocal: Fabrik zum Erzeugen neuer Session-Instanzen pro Request
+# -------------------------------------------------------------------------
+# 3) SessionLocal: Fabrik für neue Sessions pro Request
+# -------------------------------------------------------------------------
 SessionLocal = sessionmaker(
     bind=engine,
     autocommit=False,
@@ -31,22 +63,19 @@ SessionLocal = sessionmaker(
 )
 
 # -------------------------------------------------------------------------
-# 3) Basisklasse für ORM-Modelle
+# 4) Basisklasse für alle ORM-Modelle
 # -------------------------------------------------------------------------
-# Alle ORM-Klassen erben von dieser Base, sodass Base.metadata
-# alle Tabellen sammeln kann (für create_all oder Alembic)
 Base = declarative_base()
 
 # -------------------------------------------------------------------------
-# 4) FastAPI Dependency: get_db
+# 5) FastAPI Dependency: get_db
+#    Öffnet pro Request eine Session und schließt sie danach
 # -------------------------------------------------------------------------
 def get_db():
     """
     FastAPI Dependency:
-    • Öffnet eine neue DB-Session für jeden Request.
-    • Sorgt mit 'finally' dafür, dass die Session nach dem Request geschlossen wird.
-    Verwendung in Endpoints:
-        def endpoint(..., db: Session = Depends(get_db)):
+    • Öffnet eine neue DB-Session pro Request.
+    • Schließt die Session in finally, egal ob Fehler oder nicht.
     """
     db = SessionLocal()
     try:

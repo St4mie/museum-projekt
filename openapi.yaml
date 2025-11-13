@@ -1,0 +1,863 @@
+openapi: 3.0.3
+info:
+  title: Museum API
+  description: API für das Museum-Projekt zur Verwaltung von Filmen, Szenen, Medien, Exponaten und Ausstellungen
+  version: 1.0.0
+  contact:
+    name: Museum-Projekt Team
+servers:
+  - url: http://localhost:8000
+    description: Lokaler Entwicklungsserver
+security:
+  - basicAuth: []
+paths:
+  /:
+    get:
+      summary: Willkommensnachricht
+      description: Gibt eine einfache Willkommensnachricht zurück.
+      operationId: readRoot
+      tags:
+        - root
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Willkommen bei der Museum API
+  /media:
+    get:
+      summary: Liste aller Medientypen
+      description: Gibt eine Beispiel-Liste aller Medientypen zurück (Mock).
+      operationId: listMedia
+      tags:
+        - root
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MediaItem'
+  /media/{media_id}:
+    get:
+      summary: Details eines Media-Elements
+      description: Gibt Details eines einzelnen Media-Elements zurück (Mock).
+      operationId: getMedia
+      tags:
+        - root
+      parameters:
+        - name: media_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaItem'
+  /wiki/import:
+    post:
+      summary: Bulk-Import von Filmdaten
+      description: Startet den Bulk-Import von Filmdaten aus Wikipedia im Hintergrund.
+      operationId: importFromWiki
+      tags:
+        - wiki
+      security:
+        - basicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WikiImportRequest'
+      responses:
+        '201':
+          description: Import gestartet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  task_id:
+                    type: string
+                  status:
+                    type: string
+                  titles:
+                    type: integer
+  /wiki/import/status:
+    get:
+      summary: Status des Bulk-Imports
+      description: Gibt den aktuellen Status des Bulk-Imports zurück.
+      operationId: getImportStatus
+      tags:
+        - wiki
+      security:
+        - basicAuth: []
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WikiImportStatus'
+  /movies/:
+    get:
+      summary: Liste aller Filme
+      description: Liefert eine paginierte Liste aller Filme aus der DB.
+      operationId: readMovies
+      tags:
+        - movies
+      security:
+        - basicAuth: []
+      parameters:
+        - name: skip
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Movie'
+    post:
+      summary: Neuen Film anlegen
+      description: Legt einen neuen Film an, wirft 409, wenn bereits vorhanden.
+      operationId: createMovie
+      tags:
+        - movies
+      security:
+        - basicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovieCreate'
+      responses:
+        '201':
+          description: Film erfolgreich angelegt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '409':
+          description: Film existiert bereits
+  /movies/{movie_id}:
+    get:
+      summary: Einzelnen Film abrufen
+      description: Liefert einen einzelnen Film oder 404, wenn nicht gefunden.
+      operationId: readMovie
+      tags:
+        - movies
+      security:
+        - basicAuth: []
+      parameters:
+        - name: movie_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '404':
+          description: Film nicht gefunden
+  /movies/import/{movie_id}:
+    post:
+      summary: Metadaten für Film importieren
+      description: Importiert fehlende Metadaten für einen vorhandenen Film aus Wikipedia.
+      operationId: importMovieMetadata
+      tags:
+        - movies
+      security:
+        - basicAuth: []
+      parameters:
+        - name: movie_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Metadaten erfolgreich importiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movie'
+        '404':
+          description: Film nicht gefunden
+        '502':
+          description: Fehler beim Import
+  /media/images/movies/{movie_id}:
+    get:
+      summary: Liste aller Bilder zu einem Film
+      description: Listet alle Bilder zu einem Film auf.
+      operationId: listMovieImages
+      tags:
+        - media
+      parameters:
+        - name: movie_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '404':
+          description: Ordner nicht gefunden
+  /media/images/movies/{movie_id}/{filename}:
+    get:
+      summary: Einzelnes Bild zu einem Film
+      description: Liefert eine Bilddatei zurück, wirft 404, wenn nicht vorhanden.
+      operationId: getMovieImage
+      tags:
+        - media
+      parameters:
+        - name: movie_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Bild nicht gefunden
+  /media/videos/movies/{movie_id}:
+    get:
+      summary: Liste aller Videos zu einem Film
+      description: Listet alle Videodateien zu einem Film auf.
+      operationId: listMovieVideos
+      tags:
+        - media
+      parameters:
+        - name: movie_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '404':
+          description: Ordner nicht gefunden
+  /media/videos/movies/{movie_id}/{filename}:
+    get:
+      summary: Einzelnes Video zu einem Film
+      description: Liefert eine Videodatei zurück, wirft 404, wenn nicht vorhanden.
+      operationId: getMovieVideo
+      tags:
+        - media
+      parameters:
+        - name: movie_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            video/mp4:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Video nicht gefunden
+  /media/audio/movies/{movie_id}:
+    get:
+      summary: Liste aller Audiodateien zu einem Film
+      description: Listet alle Audiodateien zu einem Film auf.
+      operationId: listMovieAudio
+      tags:
+        - media
+      parameters:
+        - name: movie_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '404':
+          description: Ordner nicht gefunden
+  /media/audio/movies/{movie_id}/{filename}:
+    get:
+      summary: Einzelne Audiodatei zu einem Film
+      description: Liefert eine Audiodatei zurück, wirft 404, wenn nicht vorhanden.
+      operationId: getMovieAudio
+      tags:
+        - media
+      parameters:
+        - name: movie_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Audio nicht gefunden
+  /media/process/{movie_id}:
+    post:
+      summary: Medien verarbeiten
+      description: Startet Bild- und Videoverarbeitung im Hintergrund.
+      operationId: processMedia
+      tags:
+        - media
+      parameters:
+        - name: movie_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Verarbeitung gestartet
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+  /media/scenes/{scene_id}/media:
+    get:
+      summary: Liste aller Mediendateien für eine Szene
+      description: Listet alle Mediendateien für eine Szene.
+      operationId: listSceneMedia
+      tags:
+        - media
+      parameters:
+        - name: scene_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '404':
+          description: Szene nicht gefunden
+  /media/scenes/{scene_id}/media/{media_id}:
+    get:
+      summary: Einzelne Mediendatei einer Szene
+      description: Liefert eine einzelne Mediendatei einer Szene aus.
+      operationId: getSceneMedia
+      tags:
+        - media
+      parameters:
+        - name: scene_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: media_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Erfolgreiche Antwort
+          content:
+            video/mp4:
+              schema:
+                type: string
+                format: binary
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Medium nicht gefunden
+  /media/scenes/{scene_id}/upload:
+    post:
+      summary: Mediendatei für eine Szene hochladen
+      description: Lädt eine Mediendatei für eine Szene hoch und verarbeitet sie.
+      operationId: uploadSceneMedia
+      tags:
+        - media
+      parameters:
+        - name: scene_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                medientyp:
+                  type: string
+                  enum: [audio, video]
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Mediendatei erfolgreich hochgeladen
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  szene_id:
+                    type: integer
+                  dateipfad:
+                    type: string
+                  medientyp:
+                    type: string
+        '404':
+          description: Szene nicht gefunden
+        '400':
+          description: Ungültiger Medientyp
+        '500':
+          description: Fehler beim Verarbeiten der Mediendatei
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+  schemas:
+    MediaItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        url:
+          type: string
+        type:
+          type: string
+        title:
+          type: string
+      required:
+        - id
+        - url
+        - type
+    WikiImportRequest:
+      type: object
+      properties:
+        titles:
+          type: array
+          items:
+            type: string
+      required:
+        - titles
+    WikiImportStatus:
+      type: object
+      properties:
+        status:
+          type: string
+        processed:
+          type: integer
+        errors:
+          type: integer
+      required:
+        - status
+        - processed
+        - errors
+    MovieBase:
+      type: object
+      properties:
+        titel:
+          type: string
+          description: Filmtitel
+        erscheinungsjahr:
+          type: integer
+          nullable: true
+          description: Erscheinungsjahr
+        wiki_url:
+          type: string
+          nullable: true
+          description: Wikipedia-URL
+        regisseur:
+          type: string
+          nullable: true
+          description: Regisseur
+        autor:
+          type: string
+          nullable: true
+          description: Drehbuchautor
+        hauptdarsteller:
+          type: string
+          nullable: true
+          description: Hauptdarsteller
+        poster_url:
+          type: string
+          nullable: true
+          description: Poster-URL
+        beschreibung:
+          type: string
+          nullable: true
+          description: Kurzbeschreibung
+        pruefung:
+          type: boolean
+          default: false
+          description: Flag für manuelle Prüfung
+      required:
+        - titel
+    MovieCreate:
+      allOf:
+        - $ref: '#/components/schemas/MovieBase'
+    Movie:
+      allOf:
+        - $ref: '#/components/schemas/MovieBase'
+        - type: object
+          properties:
+            id:
+              type: integer
+          required:
+            - id
+    SzeneBase:
+      type: object
+      properties:
+        film_id:
+          type: integer
+          description: ID des Films
+        name:
+          type: string
+          description: Name der Szene
+        beschreibung:
+          type: string
+          nullable: true
+          description: Beschreibung der Szene
+      required:
+        - film_id
+        - name
+    SzeneCreate:
+      allOf:
+        - $ref: '#/components/schemas/SzeneBase'
+    Szene:
+      allOf:
+        - $ref: '#/components/schemas/SzeneBase'
+        - type: object
+          properties:
+            id:
+              type: integer
+          required:
+            - id
+    MediumBase:
+      type: object
+      properties:
+        szene_id:
+          type: integer
+          description: ID der Szene
+        dateipfad:
+          type: string
+          description: Pfad zur Mediendatei
+        medientyp:
+          type: string
+          description: Typ des Mediums (audio/video)
+      required:
+        - szene_id
+        - dateipfad
+        - medientyp
+    MediumCreate:
+      allOf:
+        - $ref: '#/components/schemas/MediumBase'
+    Medium:
+      allOf:
+        - $ref: '#/components/schemas/MediumBase'
+        - type: object
+          properties:
+            id:
+              type: integer
+          required:
+            - id
+    ExponatBase:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name des Exponats
+        beschreibung:
+          type: string
+          nullable: true
+          description: Beschreibung des Exponats
+        hersteller:
+          type: string
+          nullable: true
+          description: Hersteller des Exponats
+        baujahr:
+          type: integer
+          nullable: true
+          description: Baujahr des Exponats
+        material:
+          type: string
+          nullable: true
+          description: Material des Exponats
+        wert:
+          type: number
+          format: decimal
+          nullable: true
+          description: Wert des Exponats
+        anzahl:
+          type: integer
+          default: 1
+          description: Anzahl der Exponate
+      required:
+        - name
+    ExponatCreate:
+      allOf:
+        - $ref: '#/components/schemas/ExponatBase'
+    Exponat:
+      allOf:
+        - $ref: '#/components/schemas/ExponatBase'
+        - type: object
+          properties:
+            id:
+              type: integer
+          required:
+            - id
+    SzeneWithRelations:
+      allOf:
+        - $ref: '#/components/schemas/Szene'
+        - type: object
+          properties:
+            medien:
+              type: array
+              items:
+                $ref: '#/components/schemas/Medium'
+              default: []
+            exponate:
+              type: array
+              items:
+                $ref: '#/components/schemas/Exponat'
+              default: []
+    AusstellungBase:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name der Ausstellung
+        beschreibung:
+          type: string
+          nullable: true
+          description: Beschreibung der Ausstellung
+      required:
+        - name
+    AusstellungCreate:
+      allOf:
+        - $ref: '#/components/schemas/AusstellungBase'
+    Ausstellung:
+      allOf:
+        - $ref: '#/components/schemas/AusstellungBase'
+        - type: object
+          properties:
+            id:
+              type: integer
+          required:
+            - id
+    RaumBase:
+      type: object
+      properties:
+        ausstellung_id:
+          type: integer
+          description: ID der Ausstellung
+        name:
+          type: string
+          description: Name des Raums
+        beschreibung:
+          type: string
+          nullable: true
+          description: Beschreibung des Raums
+      required:
+        - ausstellung_id
+        - name
+    RaumCreate:
+      allOf:
+        - $ref: '#/components/schemas/RaumBase'
+    Raum:
+      allOf:
+        - $ref: '#/components/schemas/RaumBase'
+        - type: object
+          properties:
+            id:
+              type: integer
+          required:
+            - id
+    RegalBase:
+      type: object
+      properties:
+        raum_id:
+          type: integer
+          description: ID des Raums
+        bezeichnung:
+          type: string
+          description: Bezeichnung des Regals
+        beschreibung:
+          type: string
+          nullable: true
+          description: Beschreibung des Regals
+      required:
+        - raum_id
+        - bezeichnung
+    RegalCreate:
+      allOf:
+        - $ref: '#/components/schemas/RegalBase'
+    Regal:
+      allOf:
+        - $ref: '#/components/schemas/RegalBase'
+        - type: object
+          properties:
+            id:
+              type: integer
+          required:
+            - id
+    FachBase:
+      type: object
+      properties:
+        regal_id:
+          type: integer
+          description: ID des Regals
+        bezeichnung:
+          type: string
+          description: Bezeichnung des Fachs
+        beschreibung:
+          type: string
+          nullable: true
+          description: Beschreibung des Fachs
+      required:
+        - regal_id
+        - bezeichnung
+    FachCreate:
+      allOf:
+        - $ref: '#/components/schemas/FachBase'
+    Fach:
+      allOf:
+        - $ref: '#/components/schemas/FachBase'
+        - type: object
+          properties:
+            id:
+              type: integer
+          required:
+            - id
+    StellplatzBase:
+      type: object
+      properties:
+        fach_id:
+          type: integer
+          description: ID des Fachs
+        position:
+          type: integer
+          description: Position im Fach
+        szene_id:
+          type: integer
+          nullable: true
+          description: ID der Szene (optional)
+      required:
+        - fach_id
+        - position
+    StellplatzCreate:
+      allOf:
+        - $ref: '#/components/schemas/StellplatzBase'
+    Stellplatz:
+      allOf:
+        - $ref: '#/components/schemas/StellplatzBase'
+        - type: object
+          properties:
+            id:
+              type: integer
+          required:
+            - id
+    AusstellungWithRaeume:
+      allOf:
+        - $ref: '#/components/schemas/Ausstellung'
+        - type: object
+          properties:
+            raeume:
+              type: array
+              items:
+                $ref: '#/components/schemas/Raum'
+              default: []

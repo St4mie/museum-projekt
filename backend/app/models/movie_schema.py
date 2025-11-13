@@ -4,15 +4,15 @@ class MovieBase(BaseModel):
     """
     Gemeinsame Felder für Input und Output.
     """
-    title: str = Field(..., description="Filmtitel")
-    release_year: int | None = Field(None, description="Erscheinungsjahr")
+    titel: str = Field(..., description="Filmtitel")
+    erscheinungsjahr: int | None = Field(None, description="Erscheinungsjahr")
     wiki_url: str | None = Field(None, description="Wikipedia-URL")
-    director: str | None = Field(None, description="Regisseur")
-    author: str | None = Field(None, description="Drehbuchautor")
-    main_cast: str | None = Field(None, description="Hauptdarsteller")
+    regisseur: str | None = Field(None, description="Regisseur")
+    autor: str | None = Field(None, description="Drehbuchautor")
+    hauptdarsteller: str | None = Field(None, description="Hauptdarsteller")
     poster_url: str | None = Field(None, description="Poster-URL")
-    description: str | None = Field(None, description="Kurzbeschreibung")
-    review: bool = Field(False, description="Flag für manuelle Prüfung")
+    beschreibung: str | None = Field(None, description="Kurzbeschreibung")
+    pruefung: bool = Field(False, description="Flag für manuelle Prüfung")
 
     # Pydantic v2: damit wir ORM-Instanzen direkt serialisieren können
     model_config = {

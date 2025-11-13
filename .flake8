@@ -1,4 +1,7 @@
 [flake8]
+
+plugins = pydantic
+
 # Maximale Zeilenlänge (entspricht Black-Standard)
 max-line-length = 88
 
@@ -10,4 +13,4 @@ exclude =
     .git,
     __pycache__,
     .venv,
-    backend/app/services/*
+

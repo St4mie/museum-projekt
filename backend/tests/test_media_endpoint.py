@@ -126,7 +126,7 @@ def test_process_endpoint_creates_thumbnails_and_transcoding(set_static_dir: Pat
     """
     resp = client.post("/media/process/5")
     assert resp.status_code == 200, "Endpoint hat nicht richtig gestartet"
-    assert resp.json() == {"status": "processing started"}
+    assert resp.json() == {"status": "Verarbeitung gestartet"}
 
     # BackgroundTasks im TestClient laufen synchron, kurz Pausieren zur Sicherheit
     time.sleep(0.5)

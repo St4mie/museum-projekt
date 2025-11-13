@@ -1,0 +1,120 @@
+<mxfile host="app.diagrams.net" modified="2023-11-20T12:00:00.000Z" agent="5.0 (Windows)" etag="abc123" version="21.0.6" type="device">
+  <diagram name="Entwicklungsmethoden" id="METHODS123">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Titel -->
+        <mxCell id="title" value="🔧 Entwicklungsmethoden im Museum‑Projekt" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="200" y="20" width="760" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Swimlane 1: Organisation -->
+        <mxCell id="lane1" value="🏗️ Organisation" style="swimlane;horizontal=0;startSize=20;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="20" y="80" width="300" height="380" as="geometry"/>
+        </mxCell>
+        <mxCell id="orgText" value="• Agile Entwicklung mit Sprints zur Planung &amp; Strukturierung\n• Aufgabenmanagement via GitHub Issues / Backlog\n• Klare Rollenverteilung:\n  - Entwickler: Volle Rechte für Migrationen\n  - Museum: Content-Management (CRUD)\n  - Service: Import &amp; API-Funktionen\n• Regelmäßige Team-Meetings zur Fortschrittskontrolle\n• Dokumentation in Markdown-Dateien" style="text;html=1;align=left;fontSize=12;whiteSpace=wrap;" vertex="1" parent="lane1">
+          <mxGeometry x="10" y="30" width="280" height="150" as="geometry"/>
+        </mxCell>
+
+        <!-- Organisation Icon -->
+        <mxCell id="orgIcon" value="" style="shape=image;html=1;verticalAlign=top;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;imageAspect=0;aspect=fixed;image=https://cdn4.iconfinder.com/data/icons/48-bubbles/48/12-Organization-128.png;imageBackground=none;" vertex="1" parent="lane1">
+          <mxGeometry x="120" y="240" width="80" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Swimlane 2: Entwicklung &amp; Versionierung -->
+        <mxCell id="lane2" value="💻 Entwicklung &amp; Versionierung" style="swimlane;horizontal=0;startSize=20;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="340" y="80" width="300" height="380" as="geometry"/>
+        </mxCell>
+        <mxCell id="devText" value="• Git-Workflow: Feature‑Branches → Merge in main nach Sprint\n• Keine formalen Code-Reviews – eigenverantwortlich\n• Schemaänderungen mit Alembic versioniert\n• Modulare Architektur:\n  - FastAPI für Backend\n  - SQLAlchemy ORM für Datenbankzugriff\n  - Pydantic für Datenvalidierung\n• Pre-Commit-Hooks für Codequalität (Flake8, MyPy)\n• Klare Projektstruktur mit Trennung von API, Models, Services" style="text;html=1;align=left;fontSize=12;whiteSpace=wrap;" vertex="1" parent="lane2">
+          <mxGeometry x="10" y="30" width="280" height="180" as="geometry"/>
+        </mxCell>
+
+        <!-- Development Icon -->
+        <mxCell id="devIcon" value="" style="shape=image;html=1;verticalAlign=top;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;imageAspect=0;aspect=fixed;image=https://cdn4.iconfinder.com/data/icons/48-bubbles/48/23-Code-128.png" vertex="1" parent="lane2">
+          <mxGeometry x="120" y="240" width="80" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Swimlane 3: CI/CD &amp; Testing -->
+        <mxCell id="lane3" value="⚙️ CI/CD &amp; Testing" style="swimlane;horizontal=0;startSize=20;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="660" y="80" width="300" height="380" as="geometry"/>
+        </mxCell>
+        <mxCell id="ciText" value="• Umfassende Testsuite mit Pytest:\n  - API-Tests\n  - Authentifizierungstests\n  - Medienverarbeitungstests\n  - Wiki-Importtests\n• Test-Coverage-Berichte mit pytest-cov\n• Separate Testdatenbank (museum_db_test)\n• Docker-basierte Entwicklungsumgebung\n• Automatischer Container-Build via Docker Compose\n• Deployment auf Raspberry Pi nach erfolgreichem Merge" style="text;html=1;align=left;fontSize=12;whiteSpace=wrap;" vertex="1" parent="lane3">
+          <mxGeometry x="10" y="30" width="280" height="180" as="geometry"/>
+        </mxCell>
+
+        <!-- CI/CD Icon -->
+        <mxCell id="ciIcon" value="" style="shape=image;html=1;verticalAlign=top;verticalLabelPosition=bottom;labelBackgroundColor=#ffffff;imageAspect=0;aspect=fixed;image=https://cdn4.iconfinder.com/data/icons/48-bubbles/48/05-Gears-128.png" vertex="1" parent="lane3">
+          <mxGeometry x="120" y="240" width="80" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Visual Flowchart -->
+        <mxCell id="flow_title" value="Entwicklungsworkflow" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="200" y="480" width="760" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Workflow Steps -->
+        <mxCell id="step1" value="Sprint\nPlanung" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="100" y="510" width="120" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="step2" value="Feature\nEntwicklung" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="300" y="510" width="120" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="step3" value="Tests\ndurchführen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="500" y="510" width="120" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="step4" value="Merge &amp;\nDeployment" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="700" y="510" width="120" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Workflow Arrows -->
+        <mxCell id="arrow1" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="step1" target="step2">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="230" y="540" as="sourcePoint"/>
+            <mxPoint x="280" y="490" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="arrow2" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="step2" target="step3">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="430" y="540" as="sourcePoint"/>
+            <mxPoint x="480" y="490" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="arrow3" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="step3" target="step4">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="630" y="540" as="sourcePoint"/>
+            <mxPoint x="680" y="490" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="arrow4" value="" style="curved=1;endArrow=classic;html=1;rounded=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="step4" target="step1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="760" y="600" as="sourcePoint"/>
+            <mxPoint x="160" y="600" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="760" y="600"/>
+              <mxPoint x="450" y="620"/>
+              <mxPoint x="160" y="600"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Erläuterungen -->
+        <mxCell id="explanations_title" value="Erläuterungen zum Projektmanagement" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="50" y="600" width="750" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="explanations" value="Das Museum-Projekt verwendet einen agilen Entwicklungsansatz mit klaren Rollen und Verantwortlichkeiten:\n\n1. Organisation: Strukturierte Planung mit GitHub Issues und klarer Rollenverteilung\n2. Entwicklung: Modulare Architektur mit FastAPI, SQLAlchemy und Git-basierter Versionierung\n3. CI/CD &amp; Testing: Umfassende Testsuite, Docker-basierte Entwicklung und automatisiertes Deployment\n\nDer Entwicklungsworkflow folgt einem zyklischen Prozess von Sprint-Planung über Feature-Entwicklung und Tests bis hin zum Deployment, wobei jede Phase durch spezifische Tools und Praktiken unterstützt wird." style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="50" y="630" width="900" height="120" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

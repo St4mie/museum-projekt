@@ -1,6 +1,8 @@
+version: "3.8"
+
 services:
   # ---------------------------------------------------
-  # MariaDB Hauptdienst
+  # 1) MariaDB - Hauptdienst
   # ---------------------------------------------------
   db:
     image: mariadb:11
@@ -20,14 +22,17 @@ services:
       retries: 3
     volumes:
       - db_data:/var/lib/mysql
+      # ----- Init-Scripts: Hier legen wir SQL-Dateien ab, die beim ersten Start
+      #       der MariaDB-Instanz ausgeführt werden. So erzeugen wir die Haupt-
+      #       datenbank und zusätzlich die Test-Datenbank automatisch.
       - ./database/init:/docker-entrypoint-initdb.d
 
   # ---------------------------------------------------
-  # Dev-Seed (Testdaten)
-  # nur mit `--profile dev`
+  # 2) Dev-Seed (nur im Dev-Profil) – Dummy-Daten in Test-DB
   # ---------------------------------------------------
   db-seed:
     image: mariadb:11
+    container_name: museum-db-seed
     profiles:
       - dev
     depends_on:
@@ -37,23 +42,22 @@ services:
       - .env
     entrypoint: |
       sh -c '
-        echo "🌱 Seeding Dev-DB…";
+        echo "🌱 Seeding Test-DB für Dev…";
         for f in /seed/*.sql; do
-          echo "➡️  $${f}";
+          echo "➡️ $${f}";
           mariadb \
             --host="$${DB_HOST:-db}" \
             --port="$${DB_PORT:-3306}" \
-            --user=root \
-            --password="$${DB_ROOT_PASSWORD}" \
-            "$${DB_NAME}" < "$${f}";
+            --user="$${DB_MIGRATE_USER:-root}" \
+            --password="$${DB_MIGRATE_PASSWORD:-}" \
+            "$${DB_NAME}_test" < "$${f}"; 
         done
       '
     volumes:
       - ./database/dev-init:/seed
 
   # ---------------------------------------------------
-  # FastAPI-Backend mit Live-Mount & Migrations-Config
-  # nur mit `--profile dev`
+  # 3) FastAPI-Backend
   # ---------------------------------------------------
   backend:
     build:
@@ -65,27 +69,27 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      db-seed:
+        condition: service_started
     ports:
       - "8000:8000"
+    # Liest .env aus (Projekt-Root)
     env_file:
       - .env
     environment:
-      # Runtime-Connection für den Service-User (nur Lese/Schreib)
-      DATABASE_URL:         "${DATABASE_URL}"
-      # Migrations-Connection für den Entwickler-User (volle Rechte)
-      DATABASE_URL_MIGRATE: "${DATABASE_URL_MIGRATE}"
+      # Für Dev: APP_ENV=dev, APP_TEST_DATABASE_URL wird in config.py genutzt
+      APP_ENV:                "${APP_ENV}"
+      APP_DATABASE_URL:       "${APP_DATABASE_URL}"
+      APP_TEST_DATABASE_URL:  "${APP_TEST_DATABASE_URL}"
+      # Optional: APP_SECRET_KEY, APP_CORS_ALLOWED_ORIGINS etc. können ebenfalls hier gesetzt werden
     volumes:
       - ./backend:/app
-      - ./backend/static:/app/static   # Statische Medien im Container
+      - ./backend/static:/app/static
     command: >
       sh -c "
-        # 1) Alembic-Migration automatisch vor dem Start, wenn URL gesetzt
-        if [ -n \"${DATABASE_URL_MIGRATE}\" ]; then
-          echo '🔄 Running migrations…';
-          alembic upgrade head || echo '⚠️  Alembic nicht gefunden – bitte in requirements.txt aufnehmen';
-        fi;
-        # 2) Dann den Uvicorn-Server starten (Flags in einer Zeile!)
-        echo '🚀 Starting FastAPI…';
+        echo '--- ENV im FastAPI-Container ---';
+        env | grep -E '^(APP_|DB_)';
+        echo '-------------------------------';
         uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
       "
 

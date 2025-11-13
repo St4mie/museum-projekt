@@ -1,4 +1,4 @@
-# app/auth.py
+# backend/app/auth.py
 
 import secrets
 from enum import Enum
@@ -17,12 +17,12 @@ class Role(str, Enum):
     SERVICE   = "service"
     DEVELOPER = "developer"
 
-# 2) Credentials-Mapping aus .env via Settings
+# 2) Credentials-Mapping aus Settings
 #    Format: username → (password, role)
 _CREDENTIALS: Dict[str, Tuple[str, Role]] = {
-    settings.EDITOR_USER:  (settings.EDITOR_PASS,  Role.EDITOR),
-    settings.SERVICE_USER: (settings.SERVICE_PASS, Role.SERVICE),
-    settings.DEV_USER:     (settings.DEV_PASS,     Role.DEVELOPER),
+    settings.editor_user:  (settings.editor_pass,  Role.EDITOR),
+    settings.service_user: (settings.service_pass, Role.SERVICE),
+    settings.dev_user:     (settings.dev_pass,     Role.DEVELOPER),
 }
 
 def get_current_user(
@@ -33,7 +33,6 @@ def get_current_user(
     'username' und 'role' (Role-Enum) zurück.
     Liefert bei ungültigen Anmeldedaten eine 401 mit WWW-Authenticate-Header.
     """
-    # Suche Eintrag
     entry = _CREDENTIALS.get(credentials.username)
     if not entry:
         raise HTTPException(
@@ -51,6 +50,7 @@ def get_current_user(
         )
 
     return {"username": credentials.username, "role": role.value}
+
 
 def require_role(allowed_roles: List[Role]):
     """

@@ -1,0 +1,66 @@
+<mxfile host="app.diagrams.net" modified="2023-11-21T12:00:00.000Z" agent="5.0 (Windows)" etag="abc123" version="21.0.6" type="device">
+  <diagram name="ORM-Datenmodell" id="ORM123">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Titel -->
+        <mxCell id="title" value="🗃️ SQLAlchemy ORM-Datenmodell" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="200" y="20" width="760" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Beschreibung -->
+        <mxCell id="description" value="SQLAlchemy ist ein leistungsstarkes ORM (Object-Relational Mapping) für Python, das eine Brücke zwischen objektorientierten Programmen und relationalen Datenbanken schlägt." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="150" y="60" width="860" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- Linke Seite: ORM-Modell Definition -->
+        <mxCell id="orm_model_title" value="ORM-Modell Definition (movie.py)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="50" y="110" width="300" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="orm_model_code" value="from sqlalchemy import (&#xa;    Column, Integer, String, Boolean, DateTime, UniqueConstraint&#xa;)&#xa;from sqlalchemy.sql import func&#xa;from app.db import Base&#xa;&#xa;class MovieORM(Base):&#xa;    """ORM-Klasse für Filme."""&#xa;    __tablename__ = &quot;movie&quot;&#xa;    __table_args__ = (UniqueConstraint(&quot;titel&quot;, &quot;erscheinungsjahr&quot;),)&#xa;&#xa;    id = Column(Integer, primary_key=True, index=True)&#xa;    titel = Column(String, nullable=False, index=True)&#xa;    wiki_url = Column(String, nullable=True)&#xa;    erscheinungsjahr = Column(Integer, nullable=False)&#xa;    regisseur = Column(String, nullable=True)&#xa;    autor = Column(String, nullable=True)&#xa;    hauptdarsteller = Column(String, nullable=True)&#xa;    poster_url = Column(String, nullable=True)&#xa;    beschreibung = Column(String, nullable=True)&#xa;    pruefung = Column(Boolean, default=False, nullable=False)&#xa;    erstellt_am = Column(DateTime(timezone=True), server_default=func.now())&#xa;    aktualisiert_am = Column(DateTime(timezone=True), onupdate=func.now())" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="50" y="140" width="400" height="280" as="geometry"/>
+        </mxCell>
+
+        <!-- Rechte Seite: Datenbankverbindung -->
+        <mxCell id="db_setup_title" value="Datenbankverbindung (db.py)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="500" y="110" width="300" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="db_setup_code" value="from sqlalchemy import create_engine&#xa;from sqlalchemy.orm import sessionmaker, declarative_base&#xa;&#xa;# Engine erstellen mit der Datenbank-URL aus den Einstellungen&#xa;engine = create_engine(&#xa;    settings.database_url,&#xa;    pool_pre_ping=True,  # Verbindung prüfen vor Nutzung&#xa;    echo=False,          # SQL-Logs deaktiviert&#xa;    future=True,         # SQLAlchemy 2.0 API&#xa;)&#xa;&#xa;# SessionLocal: Fabrik für neue Sessions pro Request&#xa;SessionLocal = sessionmaker(&#xa;    bind=engine,&#xa;    autocommit=False,&#xa;    autoflush=False,&#xa;)&#xa;&#xa;# Basisklasse für alle ORM-Modelle&#xa;Base = declarative_base()&#xa;&#xa;# FastAPI Dependency für DB-Sessions&#xa;def get_db():&#xa;    db = SessionLocal()&#xa;    try:&#xa;        yield db&#xa;    finally:&#xa;        db.close()" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;fillColor=#d5e8d4;strokeColor=#82b366;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="500" y="140" width="400" height="280" as="geometry"/>
+        </mxCell>
+
+        <!-- Untere Seite: ORM-Nutzung -->
+        <mxCell id="orm_usage_title" value="ORM-Nutzung in API-Endpunkten (endpoints.py)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="50" y="440" width="400" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="orm_usage_code" value="@router.get(&quot;/&quot;, response_model=List[MovieSchema])&#xa;def read_movies(&#xa;    skip: int = 0,&#xa;    limit: int = 100,&#xa;    db_session: Session = Depends(get_db),&#xa;):&#xa;    # Abfrage aller Filme mit Paginierung&#xa;    return db_session.query(MovieORM).offset(skip).limit(limit).all()&#xa;&#xa;@router.post(&quot;/&quot;, response_model=MovieSchema, status_code=201)&#xa;def create_movie(&#xa;    movie: MovieCreate,&#xa;    db_session: Session = Depends(get_db),&#xa;):&#xa;    # Prüfen auf Duplikate&#xa;    exists = (&#xa;        db_session.query(MovieORM)&#xa;        .filter_by(titel=movie.titel, erscheinungsjahr=movie.erscheinungsjahr)&#xa;        .first()&#xa;    )&#xa;    if exists:&#xa;        raise HTTPException(status_code=409, detail=&quot;Movie already exists&quot;)&#xa;    # ORM-Objekt erstellen und speichern&#xa;    movie_orm = MovieORM(**movie.model_dump())&#xa;    db_session.add(movie_orm)&#xa;    db_session.commit()&#xa;    db_session.refresh(movie_orm)&#xa;    return movie_orm" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;fillColor=#ffe6cc;strokeColor=#d79b00;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="50" y="470" width="400" height="240" as="geometry"/>
+        </mxCell>
+
+        <!-- Rechte Seite unten: Schritt-für-Schritt-Erklärung -->
+        <mxCell id="explanation_title" value="Schritt-für-Schritt-Erklärung des ORM-Datenmodells" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="500" y="440" width="400" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="explanation" value="1. ORM-Modell Definition:&#xa;   • Klasse erbt von Base (declarative_base)&#xa;   • __tablename__ definiert den Tabellennamen in der Datenbank&#xa;   • __table_args__ definiert zusätzliche Tabellenoptionen wie Constraints&#xa;   • Spalten werden mit Column() definiert, mit Datentyp und Optionen&#xa;   • primary_key=True markiert den Primärschlüssel&#xa;   • index=True erstellt einen Index für schnellere Abfragen&#xa;   • nullable=False/True definiert, ob NULL-Werte erlaubt sind&#xa;   • default/server_default setzt Standardwerte&#xa;   • onupdate definiert Verhalten bei Aktualisierungen&#xa;&#xa;2. Datenbankverbindung:&#xa;   • create_engine() erstellt die Verbindung zur Datenbank&#xa;   • sessionmaker() erstellt eine Fabrik für Datenbanksitzungen&#xa;   • get_db() ist eine FastAPI-Dependency für DB-Sessions&#xa;&#xa;3. ORM-Nutzung:&#xa;   • query() startet eine Datenbankabfrage&#xa;   • filter()/filter_by() filtert Ergebnisse&#xa;   • first()/all() holt ein oder alle Ergebnisse&#xa;   • add() fügt ein neues Objekt hinzu&#xa;   • commit() speichert Änderungen in der Datenbank&#xa;   • refresh() aktualisiert das Objekt mit DB-Werten" style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="500" y="470" width="400" height="320" as="geometry"/>
+        </mxCell>
+
+        <!-- Erläuterungen -->
+        <mxCell id="explanations_title" value="Vorteile des SQLAlchemy ORM im Museum-Projekt" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="50" y="730" width="750" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="explanations" value="Das SQLAlchemy ORM bietet im Museum-Projekt folgende Vorteile:&#xa;&#xa;1. Objektorientierter Zugriff: Daten werden als Python-Objekte statt als Datensätze behandelt&#xa;2. Datenbankunabhängigkeit: Unterstützt verschiedene Datenbanken (MariaDB in Produktion, SQLite für lokale Tests)&#xa;3. Typsicherheit: Spaltentypen werden in Python-Typen übersetzt&#xa;4. Automatische Schema-Generierung: Tabellen können aus Klassen erstellt werden&#xa;5. Beziehungen: Einfache Definition von 1:n, n:m und anderen Beziehungen zwischen Tabellen&#xa;6. Migrationen: Mit Alembic können Schemaänderungen versioniert werden&#xa;7. Validierung: Constraints werden sowohl in der Datenbank als auch im Code definiert&#xa;8. Transaktionen: Atomare Operationen mit commit/rollback&#xa;&#xa;Die Kombination aus SQLAlchemy ORM und Pydantic-Schemas ermöglicht eine robuste Datenschicht mit Validierung sowohl auf Datenbank- als auch auf API-Ebene." style="shape=note;whiteSpace=wrap;html=1;size=14;verticalAlign=top;align=left;spacingTop=-6;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;" vertex="1" parent="1">
+          <mxGeometry x="50" y="760" width="900" height="140" as="geometry"/>
+        </mxCell>
+
+      </mxGraphModel>
+    </diagram>
+  </mxfile>
+</mxfile>

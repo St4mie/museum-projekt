@@ -15,7 +15,8 @@ Dieses Repository implementiert eine **Museum API**, mit der Besucher über eine
 4. [API Endpunkte](#api-endpunkte)  
 5. [Tests](#tests)  
 6. [Tipps & Tricks](#tipps--tricks)  
-7. [Weiterführende Links](#weiterführende-links)  
+7. [Dokumentation](#dokumentation)  
+8. [Weiterführende Links](#weiterführende-links)  
 
 ---
 
@@ -34,148 +35,170 @@ Dieses Repository implementiert eine **Museum API**, mit der Besucher über eine
    ```bash
    git clone https://github.com/St4mie/museum-projekt.git
    cd museum-projekt
-Entwicklungs-.env anlegen
+   ```
 
-bash
-Kopieren
-Bearbeiten
-cp .env.example .env
-# .env nun mit lokalen Zugangsdaten füllen
-Docker Compose starten
+2. **Entwicklungs-.env anlegen**
+   ```bash
+   cp .env.example .env
+   # .env nun mit lokalen Zugangsdaten füllen
+   ```
 
-bash
-Kopieren
-Bearbeiten
-docker compose up --build --profile dev -d
-API prüfen
+3. **Docker Compose starten**
+   ```bash
+   docker compose up --build --profile dev -d
+   ```
 
-bash
-Kopieren
-Bearbeiten
-curl http://localhost:8000/movies
-curl http://localhost:8000/media/images/movies/1
-Container-Logs ansehen
+4. **API prüfen**
+   ```bash
+   curl http://localhost:8000/movies
+   curl http://localhost:8000/media/images/movies/1
+   ```
 
-bash
-Kopieren
-Bearbeiten
-docker compose logs -f backend
-Konfiguration
-Alle konfigurierbaren Werte liegen in backend/app/config.py und werden über Umgebungsvariablen gesteuert. Wichtige Einstellungen:
+5. **Container-Logs ansehen**
+   ```bash
+   docker compose logs -f backend
+   ```
+## Konfiguration
 
-Datenbank
+Alle konfigurierbaren Werte liegen in `backend/app/config.py` und werden über Umgebungsvariablen gesteuert. Wichtige Einstellungen:
 
-DATABASE_URL: Connection-String für den Runtime-User
+### Datenbank
 
-DATABASE_URL_MIGRATE: für Alembic-Migrationen
+- **DATABASE_URL**: Connection-String für den Runtime-User
+- **DATABASE_URL_MIGRATE**: für Alembic-Migrationen
 
-Server
+### Server
 
-HOST & PORT: Bind-Adresse und Port für Uvicorn
+- **HOST & PORT**: Bind-Adresse und Port für Uvicorn
 
-Media
+### Media
 
-MEDIA_STATIC_PATH: Pfad im Container zum Ordner mit Bildern, Videos, Audio
+- **MEDIA_STATIC_PATH**: Pfad im Container zum Ordner mit Bildern, Videos, Audio
+- **MEDIA_URL**: URL-Prefix zum Ausliefern der statischen Dateien
 
-MEDIA_URL: URL-Prefix zum Ausliefern der statischen Dateien
+### CORS & Sicherheit
 
-CORS & Sicherheit
+- **CORS_ALLOWED_ORIGINS**, **SECRET_KEY**, **ACCESS_TOKEN_EXPIRE_MINUTES**
 
-CORS_ALLOWED_ORIGINS, SECRET_KEY, ACCESS_TOKEN_EXPIRE_MINUTES
+### Feature-Flags
 
-Feature-Flags
+- **FEATURE_THUMBNAILS**: Thumbnail-Pipeline ein-/ausschalten
 
-FEATURE_THUMBNAILS: Thumbnail-Pipeline ein-/ausschalten
+Änderungen an dieser Datei oder an der `.env` erfordern keinen Code-Rebuild, nur einen Neustart des Containers.
 
-Änderungen an dieser Datei oder an der .env erfordern keinen Code-Rebuild, nur einen Neustart des Containers.
+## API Endpunkte
 
-API Endpunkte
-Filme (/movies)
-GET /movies
-Listet alle Filme (paginierbar via ?skip=…&limit=…).
+### Filme (/movies)
 
-GET /movies/{id}
-Liefert ein einzelnes Film-Objekt.
+- **GET /movies**  
+  Listet alle Filme (paginierbar via ?skip=…&limit=…).
 
-POST /movies
-Legt einen neuen Film an.
+- **GET /movies/{id}**  
+  Liefert ein einzelnes Film-Objekt.
 
-POST /movies/import/{id}
-Importiert zusätzliche Metadaten aus Wikipedia.
+- **POST /movies**  
+  Legt einen neuen Film an.
 
-Medien (/media)
-Bilder
+- **POST /movies/import/{id}**  
+  Importiert zusätzliche Metadaten aus Wikipedia.
 
-GET /media/images/movies/{id}
-Listet alle Bilder des Films.
+### Medien (/media)
 
-GET /media/images/movies/{id}/{datei}
-Gibt die Datei mit korrektem MIME-Type (image/jpeg/image/png).
+#### Bilder
 
-Videos
+- **GET /media/images/movies/{id}**  
+  Listet alle Bilder des Films.
 
-GET /media/videos/movies/{id}
+- **GET /media/images/movies/{id}/{datei}**  
+  Gibt die Datei mit korrektem MIME-Type (image/jpeg/image/png).
 
-GET /media/videos/movies/{id}/{datei} (video/mp4)
+#### Videos
 
-Audio
+- **GET /media/videos/movies/{id}**  
+  Listet alle Videos des Films.
 
-GET /media/audio/movies/{id}
+- **GET /media/videos/movies/{id}/{datei}**  
+  Gibt die Videodatei zurück (video/mp4).
 
-GET /media/audio/movies/{id}/{datei} (audio/mpeg)
+#### Audio
 
-Processing
+- **GET /media/audio/movies/{id}**  
+  Listet alle Audiodateien des Films.
 
-POST /media/process/{id}
-Löst im Hintergrund das Erstellen von Thumbnails und Video-Transcoding (720p) aus.
+- **GET /media/audio/movies/{id}/{datei}**  
+  Gibt die Audiodatei zurück (audio/mpeg).
 
-Tests
-Unit-Tests im Ordner backend/tests/
+#### Processing
 
-test_api.py: CRUD-Tests für /movies
+- **POST /media/process/{id}**  
+  Löst im Hintergrund das Erstellen von Thumbnails und Video-Transcoding (720p) aus.
 
-test_media_endpoints.py: Endpunkt-Tests für /media
+## Tests
 
-test_media_processor.py: Generierung von Thumbnails & ffmpeg-Stubs
+Unit-Tests im Ordner `backend/tests/`:
 
-Ausführung
+- **test_api.py**: CRUD-Tests für /movies
+- **test_media_endpoints.py**: Endpunkt-Tests für /media
+- **test_media_processor.py**: Generierung von Thumbnails & ffmpeg-Stubs
 
-bash
-Kopieren
-Bearbeiten
+### Ausführung
+
+```bash
+# Im Container
 docker compose exec backend pytest -q
-Watch-Mode (lokal ohne Container)
 
-bash
-Kopieren
-Bearbeiten
+# Watch-Mode (lokal ohne Container)
 pytest --maxfail=1 --disable-warnings -q
-Tipps & Tricks
-Hot-Reload: Im Dev-Profil läuft Uvicorn mit --reload, Pycharm-Breakpoints funktionieren per Remote-Interpreter.
+```
+## Tipps & Tricks
 
-Datenbank-Migrations: Alembic-Skripte liegen im Ordner backend/alembic/.
+- **Hot-Reload**: Im Dev-Profil läuft Uvicorn mit --reload, Pycharm-Breakpoints funktionieren per Remote-Interpreter.
+- **Datenbank-Migrations**: Alembic-Skripte liegen im Ordner `backend/alembic/`.
+- **Media-Ordner**: Lege `.gitkeep` in jeden leeren Unterordner, damit Git die Struktur behält.
 
-Media-Ordner: Lege .gitkeep in jeden leeren Unterordner, damit Git die Struktur behält.
+### Fehleranalyse:
 
-Fehleranalyse:
+- **404 bei Medien**: prüfe MEDIA_STATIC_PATH und Dateinamen.
+- **ffmpeg-Fehler im Log**: kontrolliere, ob ffmpeg im Container installiert ist.
 
-404 bei Medien: prüfe MEDIA_STATIC_PATH und Dateinahmen.
+## Dokumentation
 
-ffmpeg-Fehler im Log: kontrolliere, ob ffmpeg im Container installiert ist.
+Die Projektdokumentation wurde in den `docs` Ordner verschoben und ist wie folgt strukturiert:
 
-Weiterführende Links
-FastAPI Documentation
+### Markdown-Dokumentation (`docs/markdown/`)
 
-SQLAlchemy ORM Tutorial
+- **Documentation.md**: Ausführliche Projektdokumentation
+- **Projektstruktur.md**: Übersicht der Projektstruktur
+- **class overview.md**: Übersicht der Klassenstruktur
+- **Datenmodell Film.md**: Dokumentation des Datenmodells für Filme
+- **usecase.md**: Anwendungsfälle des Projekts
+- **Museum-Projekt_Präsentation.md**: Präsentationsinhalte
+- **Museum-Projekt_Präsentation_mit_Notizen.md**: Präsentation mit Notizen
+- **Präsentation_README.md**: Anleitung zur Präsentation
 
-Pydantic v2
+### Diagramme (`docs/diagrams/`)
 
-Alembic
+- **Projektmanagment.xml**: Diagramm zum Projektmanagement
+- **Sequenzdiagramm Film anlegen.xml**: Sequenzdiagramm für das Anlegen eines Films
+- **REST-API-Diagramm.xml**: Diagramm der REST-API
+- **Datenmodell Film.xml**: Diagramm des Datenmodells für Filme
+- **Codebeispielt Fast-Api.xml**: Codebeispiel für FastAPI
+- **ORM-Datenmodell.xml**: Diagramm des ORM-Datenmodells
 
-Docker Compose Reference
+### Präsentationen (`docs/presentations/`)
 
-Pillow (PIL) Documentation
+- **Museum-Projekt_Präsentation.pptx**: PowerPoint-Präsentation
 
-ffmpeg Documentation
+## Weiterführende Links
 
-Stand: Mai 2025 – erstellt im Rahmen des Museum Projekt Prototyps
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [SQLAlchemy ORM Tutorial](https://docs.sqlalchemy.org/en/20/orm/tutorial.html)
+- [Pydantic v2](https://docs.pydantic.dev/latest/)
+- [Alembic](https://alembic.sqlalchemy.org/en/latest/)
+- [Docker Compose Reference](https://docs.docker.com/compose/reference/)
+- [Pillow (PIL) Documentation](https://pillow.readthedocs.io/en/stable/)
+- [ffmpeg Documentation](https://ffmpeg.org/documentation.html)
+
+---
+
+Stand: Juni 2025 – erstellt im Rahmen des Museum Projekt Prototyps
