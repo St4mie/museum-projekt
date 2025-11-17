@@ -5,8 +5,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from pydantic import Field, field_validator
-from pydantic import BaseSettings
-from pydantic_settings import SettingsConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 # Determine the location of the .env file
@@ -116,7 +115,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        env_prefix="APP",
+        env_prefix="APP_",
         case_sensitive=False,
         extra="ignore",
         # Don't use env_file_path here as we're manually loading with dotenv
